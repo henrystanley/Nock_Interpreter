@@ -45,7 +45,7 @@ nock(a)          *a
 -- Noun Type --
 
 -- [a [b c] 5] == (a :& (b :& c) :& (A 5))
--- Inf acts as starting nub in parsing and infinity in eval, such as in: nockE (A a)
+-- Inf acts as starting nub in parsing and infinity in eval, such as in: nockE (A a); like Nothing type in Maybe monad
 data Noun = A Integer | Noun :& Noun | Inf deriving (Show,  Eq)
 infixr 6 :&
 cell :: Noun -> Noun -> Noun -- prefix cell constructer with inf identity, used in parse
@@ -63,20 +63,20 @@ nockE :: Noun -> Noun
 nockQ (a :& b)                      = (A 0)
 nockQ (A a)                         = (A 1)
 nockQ Inf                           = Inf
-nockP (a :& b)                      = Inf -- Infinite
+nockP (a :& b)                      = Inf -- Infinite recurse in spec
 nockP (A a)                         = (A (1 + a))
 nockP Inf                           = Inf
 nockE (a :& b)                      = if a == b then (A 0) else (A 1)
-nockE (A a)                         = Inf -- Infinite
+nockE (A a)                         = Inf -- Infinite recurse in spec
 nockE Inf                           = Inf
 
 nockT ((A 1) :& a)                  = a
 nockT ((A 2) :& a :& b)             = a
 nockT ((A 3) :& a :& b)             = b
 nockT ((A n) :& b)
-  | n `mod` 2==0                    = nockT ((A 2) :& (nockT ((A (n `div` 2)) :& b)))
-  | n `mod` 2/=0                    = nockT ((A 3) :& (nockT ((A ((n-1) `div` 2)) :& b)))
-nockT (A a)                         = Inf -- Infinite
+  | n `mod` 2 == 0                    = nockT ((A 2) :& (nockT ((A (n `div` 2)) :& b)))
+  | n `mod` 2 /= 0                    = nockT ((A 3) :& (nockT ((A ((n-1) `div` 2)) :& b)))
+nockT (A a)                         = Inf -- Infinite recurse in spec
 nockT Inf                           = Inf
 
 nock (a :& (b :& c) :& d)           = ((nock (a :& b :& c)) :& (nock (a :& d)))
@@ -98,24 +98,24 @@ nock (a :& (A 10) :& b :& c)        = nock (a :& c)
 nock Inf                            = Inf 
 nock (Inf :& a)                     = Inf 
 nock (a :& Inf)                     = Inf 
-nock a                              = Inf -- Infinite
+nock a                              = Inf -- Infinite recurse in spec
 
 
 -- Parse, Format, and Main Functions --
 
 parse :: [String] -> (Noun, [String])
 parse [] = (Inf, [])
-parse ("[":xs) = (cell y z, zs)
-  where forwardP = parse xs
-        y = fst forwardP
-        forwardP2 = parse (snd forwardP)
-        z = fst forwardP2
-        zs = snd forwardP2
+parse ("[":xs) = (cell cellHead cellTail, tailRemainder)
+  where xsParsed = parse xs
+        cellHead = fst xsParsed
+        tailParse = parse (snd xsParsed)
+        cellTail = fst tailParse
+        tailRemainder = snd tailParse
 parse ("]":xs) = (Inf, xs)
-parse (x:xs)   = (cell (A (read x :: Integer)) y, ys)
-  where forwardP = parse xs
-        y = fst forwardP
-        ys = snd forwardP 
+parse (x:xs)   = (cell (A (read x :: Integer)) cellHead, parseRemainder)
+  where xsParsed = parse xs
+        cellHead = fst xsParsed
+        parseRemainder = snd xsParsed 
 
 parseNock :: String -> Noun
 parseNock x = fst $ parse readyToParse
@@ -131,7 +131,8 @@ formatNock Inf = "∞"
 main :: IO()
 main = do
   inNock <- getLine
-  putStr $ ((\x->x++"\n") . formatNock . nock . parseNock) inNock
-  main
-
-  
+  if inNock /= ":q" 
+  then do
+    putStr $ ((\x->x++"\n") . formatNock . nock . parseNock) inNock
+    main
+  else return ()
