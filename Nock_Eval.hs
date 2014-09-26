@@ -1,14 +1,11 @@
+{- Noun Reduction -}
+module Nock_Eval (nock, nockJet, jetReduce) where
+import Nock_Type
 
 
--- Noun Type --
-
--- [a [b c] 5] == (a :& (b :& c) :& (A 5))
--- Inf acts as starting nub in parsing and infinity in eval, such as in: nockE (A a); like Nothing type in Maybe monad
-data Noun = A Integer | Noun :& Noun | Inf deriving (Show,  Eq)
-infixr 6 :&
-cell :: Noun -> Noun -> Noun -- prefix cell constructer with inf identity, used in parse
-cell x Inf = x
-cell x y = (x :& y) 
+-- Type Defs for pure nock evaluation --
+{- Note: these are up here instead of with their functions
+   because it makes the nock implementation look more like the nock spec -}
 nock  :: Noun -> Noun
 nockT :: Noun -> Noun
 nockQ :: Noun -> Noun
@@ -17,7 +14,7 @@ nockE :: Noun -> Noun
 
 
 -- Nock Spec Implementation --
-
+-- basically nock_spec.txt translated to haskell, with Inf id functions
 nockQ (a :& b)                      = (A 0)
 nockQ (A a)                         = (A 1)
 nockQ Inf                           = Inf
@@ -59,38 +56,12 @@ nock (a :& Inf)                     = Inf
 nock a                              = Inf -- Infinite recurse in spec
 
 
--- Parse, Format, and Main Functions --
+-- Jet Reduction function --
+nockJet :: Noun -> Noun
+-- Add jets here
+nockJet a = a
 
-parse :: [String] -> (Noun, [String])
-parse [] = (Inf, [])
-parse ("[":xs) = (cell cellHead cellTail, tailRemainder)
-  where xsParsed = parse xs
-        cellHead = fst xsParsed
-        tailParse = parse (snd xsParsed)
-        cellTail = fst tailParse
-        tailRemainder = snd tailParse
-parse ("]":xs) = (Inf, xs)
-parse (x:xs)   = (cell (A (read x :: Integer)) cellHead, parseRemainder)
-  where xsParsed = parse xs
-        cellHead = fst xsParsed
-        parseRemainder = snd xsParsed 
 
-parseNock :: String -> Noun
-parseNock x = fst $ parse readyToParse
-  where leftBrackets = foldr (\letter seed -> if letter == '[' then (seed++" [ ") else (seed++[letter])) ""
-        rightBrackets = foldr (\letter seed -> if letter == ']' then (seed++" ] ") else (seed++[letter])) ""
-        readyToParse = (words . rightBrackets . leftBrackets) x
-
-formatNock :: Noun -> String
-formatNock (a :& b) = "[ "++(formatNock a) ++ (formatNock b)++"] "
-formatNock (A a) = (show a)++" "
-formatNock Inf = "∞"
-
-main :: IO()
-main = do
-  inNock <- getLine
-  if inNock /= ":q" 
-  then do
-    putStr $ ((\x->x++"\n") . formatNock . nock . parseNock) inNock
-    main
-  else return ()
+-- Jet Assisted Nock reduction --
+jetReduce :: Noun -> Noun
+jetReduce = (nock . nockJet) 
