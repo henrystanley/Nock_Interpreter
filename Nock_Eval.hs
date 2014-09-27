@@ -14,7 +14,7 @@ nockE :: Noun -> Noun
 
 
 -- Nock Spec Implementation --
--- basically nock_spec.txt translated to haskell, with Inf id functions
+-- Basically nock_spec.txt translated to haskell, with Inf id functions
 nockQ (a :& b)                      = (A 0)
 nockQ (A a)                         = (A 1)
 nockQ Inf                           = Inf

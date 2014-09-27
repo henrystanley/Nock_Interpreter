@@ -22,9 +22,8 @@ parse (x:xs)   = (cell (A (read x :: Integer)) cellHead, parseRemainder)
 -- Noun Read function, formats string then applies parse --
 readNoun :: String -> Noun
 readNoun x = fst $ parse readyToParse
-  where leftBrackets = foldr (\letter seed -> if letter == '[' then (seed++" [ ") else (seed++[letter])) ""
-        rightBrackets = foldr (\letter seed -> if letter == ']' then (seed++" ] ") else (seed++[letter])) ""
-        readyToParse = (words . rightBrackets . leftBrackets) x
+  where spaceChar x = foldr (\char str -> if char == x then str++(' ':x:" ") else str++[char]) ""
+        readyToParse = (words . spaceChar '[' . spaceChar ']') x
 
 
 -- Noun Show function --
