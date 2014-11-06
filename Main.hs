@@ -2,6 +2,7 @@
 import System.Environment
 import Nock_Parse
 import Nock_Eval
+import Nock_Exotic_Eval
 
 
 -- Parses stdin as nock, evaluates, then outputs formated nock to stdout --

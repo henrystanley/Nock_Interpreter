@@ -5,14 +5,14 @@ import Nock_Type
 
 -- Parsing function --
 parse :: [String] -> (Noun, [String])
-parse [] = (Inf, [])
+parse [] = ((Inf (A 0)), [])
 parse ("[":xs) = (cell cellHead cellTail, tailRemainder)
   where xsParsed = parse xs
         cellHead = fst xsParsed
         tailParse = parse (snd xsParsed)
         cellTail = fst tailParse
         tailRemainder = snd tailParse
-parse ("]":xs) = (Inf, xs)
+parse ("]":xs) = ((Inf (A 0)), xs)
 parse (x:xs)   = (cell (A (read x :: Integer)) cellHead, parseRemainder)
   where xsParsed = parse xs
         cellHead = fst xsParsed
@@ -31,4 +31,4 @@ readNoun x = fst $ parse readyToParse
 showNoun :: Noun -> String
 showNoun (a :& b) = "[ "++(showNoun a) ++ (showNoun b)++"] "
 showNoun (A a) = (show a)++" "
-showNoun Inf = "∞"
+showNoun (Inf a) = (showNoun a) ++ " -> ∞"
